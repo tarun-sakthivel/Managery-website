@@ -65,7 +65,7 @@ export function TaskDialog({ open, onOpenChange, task, onSave, onDelete, isTeamL
             {task ? 'Update task details below' : 'Fill in the details for the new task'}
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -75,9 +75,10 @@ export function TaskDialog({ open, onOpenChange, task, onSave, onDelete, isTeamL
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
+                disabled={!isTeamLeader && !!task}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -86,9 +87,10 @@ export function TaskDialog({ open, onOpenChange, task, onSave, onDelete, isTeamL
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
                 required
+                disabled={!isTeamLeader && !!task}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select value={status} onValueChange={(value) => setStatus(value as Task['status'])}>
@@ -102,11 +104,11 @@ export function TaskDialog({ open, onOpenChange, task, onSave, onDelete, isTeamL
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="priority">Priority</Label>
-              <Select 
-                value={priority} 
+              <Select
+                value={priority}
                 onValueChange={(value) => setPriority(value as Task['priority'])}
                 disabled={!isTeamLeader && !!task}
               >
