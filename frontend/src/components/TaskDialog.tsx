@@ -7,14 +7,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Task } from '@/pages/TasksDashboard';
 import { Trash2 } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task: Task | null;
-  onSave: (task: Partial<Task>) => void;
+  onSave: (task: Partial<Task>, ownerId?: string) => void;
   onDelete?: (taskId: string) => void;
   isTeamLeader: boolean;
+}
+
+interface Employee {
+  id: string;
+  name: string;
+  email: string;
 }
 
 export function TaskDialog({ open, onOpenChange, task, onSave, onDelete, isTeamLeader }: TaskDialogProps) {
@@ -22,6 +30,24 @@ export function TaskDialog({ open, onOpenChange, task, onSave, onDelete, isTeamL
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<Task['status']>('pending');
   const [priority, setPriority] = useState<Task['priority']>('medium');
+  const [selectedOwnerId, setSelectedOwnerId] = useState('');
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const { token } = useAuth();
+
+  // Fetch employees when dialog opens (for team leaders creating tasks)
+  useEffect(() => {
+    if (open && !task && isTeamLeader) {
+      async function fetchEmployees() {
+        try {
+          const data = await apiFetch('/employees/?skip=0&limit=100', 'GET', undefined, token);
+          setEmployees(data || []);
+        } catch (error) {
+          console.error('Failed to fetch employees:', error);
+        }
+      }
+      fetchEmployees();
+    }
+  }, [open, task, isTeamLeader, token]);
 
   useEffect(() => {
     if (task) {
@@ -44,7 +70,7 @@ export function TaskDialog({ open, onOpenChange, task, onSave, onDelete, isTeamL
       description,
       status,
       priority,
-    });
+    }, selectedOwnerId || undefined);
   };
 
   const handleDelete = () => {
@@ -90,6 +116,24 @@ export function TaskDialog({ open, onOpenChange, task, onSave, onDelete, isTeamL
                 disabled={!isTeamLeader && !!task}
               />
             </div>
+
+            {!task && isTeamLeader && (
+              <div className="space-y-2">
+                <Label htmlFor="assignedTo">Assign To</Label>
+                <Select value={selectedOwnerId} onValueChange={setSelectedOwnerId} required>
+                  <SelectTrigger id="assignedTo">
+                    <SelectValue placeholder="Select employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.name} ({emp.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>

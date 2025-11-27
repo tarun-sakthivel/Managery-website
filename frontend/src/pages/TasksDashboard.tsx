@@ -308,7 +308,7 @@ export default function TasksDashboard() {
   };
 
   // create or update task via API
-  const handleSaveTask = async (taskData: Partial<Task>) => {
+  const handleSaveTask = async (taskData: Partial<Task>, ownerId?: string) => {
     if (!token || !user) {
       toast({ title: "Not authenticated", description: "Please login first." });
       return;
@@ -324,15 +324,18 @@ export default function TasksDashboard() {
         setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...payload } as Task : t)));
         toast({ title: "Task updated" });
       } else {
-        // create new
+        // create new - owner_id is required and should be passed as query param
+        if (!ownerId) {
+          toast({ title: "Failed", description: "Please assign the task to an employee" });
+          return;
+        }
         const body = {
           title: taskData.title,
           description: taskData.description,
           priority: taskData.priority || "medium",
           status: taskData.status || "pending",
-          owner_id: taskData.owner_id || user.id, // owner_id should be provided by TL or defaults to current user
         };
-        const created = await apiFetch(`/tasks`, "POST", body, token);
+        const created = await apiFetch(`/tasks/?owner_id=${ownerId}`, "POST", body, token);
         // created should contain id and owner_name etc.
         setTasks((prev) => [created, ...prev]);
         toast({ title: "Task created" });

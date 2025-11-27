@@ -1,76 +1,85 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { apiFetch } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ChangeRequest {
   id: string;
   employee_id: string;
-  employee_name: string;
+  employee_name?: string;
   field_name: string;
   new_value: string;
+  reason?: string;
   status: 'pending' | 'approved' | 'rejected';
   requested_at: string;
 }
 
-const mockPendingRequests: ChangeRequest[] = [
-  {
-    id: '1',
-    employee_id: '1',
-    employee_name: 'John Employee',
-    field_name: 'department',
-    new_value: 'Product',
-    status: 'pending',
-    requested_at: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: '3',
-    employee_id: '3',
-    employee_name: 'Mike Developer',
-    field_name: 'email',
-    new_value: 'mike.dev@proutask.com',
-    status: 'pending',
-    requested_at: '2024-01-16T14:30:00Z',
-  },
-  {
-    id: '4',
-    employee_id: '4',
-    employee_name: 'Lisa Designer',
-    field_name: 'name',
-    new_value: 'Lisa Brown',
-    status: 'pending',
-    requested_at: '2024-01-17T09:15:00Z',
-  },
-];
-
 export default function ApprovalsDashboard() {
-  const [requests, setRequests] = useState<ChangeRequest[]>(mockPendingRequests);
+  const [requests, setRequests] = useState<ChangeRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { token } = useAuth();
 
-  const handleApprove = (requestId: string, employeeName: string) => {
-    setRequests(requests.map(req => 
-      req.id === requestId ? { ...req, status: 'approved' as const } : req
-    ).filter(req => req.status === 'pending'));
-    
-    toast({
-      title: 'Request Approved',
-      description: `${employeeName}'s change request has been approved.`,
-    });
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  const fetchRequests = async () => {
+    try {
+      setLoading(true);
+      const data = await apiFetch('/requests/', 'GET', undefined, token);
+      setRequests(data || []);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to fetch requests',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReject = (requestId: string, employeeName: string) => {
-    setRequests(requests.map(req => 
-      req.id === requestId ? { ...req, status: 'rejected' as const } : req
-    ).filter(req => req.status === 'pending'));
-    
-    toast({
-      title: 'Request Rejected',
-      description: `${employeeName}'s change request has been rejected.`,
-      variant: 'destructive',
-    });
+  const handleApprove = async (requestId: string, employeeName: string) => {
+    try {
+      await apiFetch(`/requests/${requestId}/approve`, 'PUT', undefined, token);
+      toast({
+        title: 'Request Approved',
+        description: `${employeeName || 'Employee'}'s change request has been approved.`,
+      });
+      // Refresh the list
+      fetchRequests();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to approve request',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleReject = async (requestId: string, employeeName: string) => {
+    try {
+      await apiFetch(`/requests/${requestId}/reject`, 'PUT', undefined, token);
+      toast({
+        title: 'Request Rejected',
+        description: `${employeeName || 'Employee'}'s change request has been rejected.`,
+        variant: 'destructive',
+      });
+      // Refresh the list
+      fetchRequests();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to reject request',
+        variant: 'destructive'
+      });
+    }
   };
 
   const pendingRequests = requests.filter(req => req.status === 'pending');
@@ -92,7 +101,11 @@ export default function ApprovalsDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {pendingRequests.length === 0 ? (
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-purple-700" />
+            </div>
+          ) : pendingRequests.length === 0 ? (
             <div className="text-center py-12">
               <CheckCircle className="h-12 w-12 text-success mx-auto mb-4" />
               <p className="text-muted-foreground">No pending requests. All caught up!</p>
