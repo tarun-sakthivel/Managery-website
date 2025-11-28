@@ -339,7 +339,7 @@ export default function EmployeeDirectory() {
                     <TableHead>Email</TableHead>
                     <TableHead>Department</TableHead>
                     <TableHead>Role</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {/* <TableHead className="text-right">Actions</TableHead> */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -351,12 +351,12 @@ export default function EmployeeDirectory() {
                       <TableCell>
                         <span className={roleBadgeClass(employee.role)}>{employee.role.replace("_", " ")}</span>
                       </TableCell>
-                      <TableCell className="text-right">
+                      {/* <TableCell className="text-right">
                         <Button variant="outline" size="sm" onClick={() => handleEditEmployee(employee)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </Button>
-                      </TableCell>
+                      </TableCell> */}
                     </TableRow>
                   ))}
                 </TableBody>

@@ -16,7 +16,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const { login, isLoading, error } = useAuth();
   const navigate = useNavigate();
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -24,8 +24,8 @@ export default function Login() {
       navigate('/tasks');
     } catch (err) {
       // Error is handled in context
-    console.error("Login failed", err);
-    
+      console.error("Login failed", err);
+
     }
   };
 
@@ -46,7 +46,7 @@ export default function Login() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -59,7 +59,7 @@ export default function Login() {
                 disabled={isLoading}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -94,9 +94,9 @@ export default function Login() {
             <div className="pt-4 border-t">
               <p className="text-xs text-muted-foreground text-center">
                 Demo credentials:<br />
-                Employee: employee@managery.com<br />
-                Team Leader: leader@managery.com<br />
-                Password: password123
+                Employee: pugazh@example.com<br />
+                Team Leader: tarun@example.com<br />
+                Password: secret123
               </p>
             </div>
           </form>

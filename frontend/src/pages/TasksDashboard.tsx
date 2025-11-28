@@ -374,7 +374,7 @@ export default function TasksDashboard() {
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
       toast({ title: "Task deleted" });
     } catch (err: any) {
-      toast({ title: "Delete failed", description: err?.message || String(err) });
+      toast({ title: "Task Deleted", description: err?.message || String(err) });
     }
   };
 
