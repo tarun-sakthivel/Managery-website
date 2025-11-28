@@ -316,27 +316,43 @@ export default function TasksDashboard() {
 
     try {
       if (selectedTask) {
-        // update existing
+        // UPDATE task
         const id = selectedTask.id;
         const payload = { ...taskData };
+
         await apiFetch(`/tasks/${id}`, "PUT", payload, token);
-        // refresh local state
-        setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...payload } as Task : t)));
+
+        setTasks((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, ...payload } as Task : t))
+        );
+
         toast({ title: "Task updated" });
       } else {
-        // create new - owner_id is required and should be passed as query param
+        // CREATE task
         if (!ownerId) {
-          toast({ title: "Failed", description: "Please assign the task to an employee" });
+          toast({
+            title: "Failed",
+            description: "Please assign the task to an employee",
+          });
           return;
         }
+
         const body = {
           title: taskData.title,
           description: taskData.description,
           priority: taskData.priority || "medium",
           status: taskData.status || "pending",
+          owner_id: ownerId,
         };
-        const created = await apiFetch(`/tasks/?owner_id=${ownerId}`, "POST", body, token);
-        // created should contain id and owner_name etc.
+
+        // 👇 FIXED: owner_id must be in URL
+        const created = await apiFetch(
+          `/tasks/?owner_id=${ownerId}`,
+          "POST",
+          body,
+          token
+        );
+
         setTasks((prev) => [created, ...prev]);
         toast({ title: "Task created" });
       }

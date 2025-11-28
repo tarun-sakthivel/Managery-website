@@ -273,11 +273,12 @@ def serialize_doc(doc):
 
 
 @router.post("/", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
-async def create_task(task: TaskCreate, 
-                      owner_id: str = Query(..., description="ID of the employee to assign this task to"),
+async def create_task(task: TaskCreate,
                       tasks_collection: AsyncIOMotorCollection = TaskCollection,
                       employees_collection: AsyncIOMotorCollection = EmployeeCollection,
                       user_data: dict = TL):
+    # Extract owner_id from task model (it's in the request body)
+    owner_id = task.owner_id
     try:
         owner_oid = ObjectId(owner_id)
     except:
@@ -309,7 +310,7 @@ async def read_my_tasks(tasks_collection: AsyncIOMotorCollection = TaskCollectio
     employee_id = user_data.get("id")
     cursor = tasks_collection.find({"owner_id": employee_id}).sort("created_at", -1)
     tasks = await cursor.to_list(length=None)
-    return [TaskRead(**t) for t in tasks]
+    return [TaskRead(**serialize_doc(t)) for t in tasks]
 
 @router.get("/{task_id}", response_model=TaskRead)
 async def read_single_task(task_id: str, tasks_collection: AsyncIOMotorCollection = TaskCollection, user_data: dict = CurrentUser):

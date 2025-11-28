@@ -26,9 +26,17 @@ def request(method, endpoint, data=None, token=None, content_type="application/j
     try:
         with urllib.request.urlopen(req) as response:
             res_body = response.read().decode("utf-8")
-            return response.status, json.loads(res_body) if res_body else {}
+            if not res_body: return response.status, {}
+            try:
+                return response.status, json.loads(res_body)
+            except:
+                return response.status, res_body
     except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read().decode("utf-8"))
+        err_body = e.read().decode("utf-8")
+        try:
+            return e.code, json.loads(err_body)
+        except:
+            return e.code, err_body
     except Exception as e:
         print(f"Error: {e}")
         return 500, str(e)
@@ -86,15 +94,18 @@ def run_tests():
 
     # 5. TL Create Task
     print(f"\n5. TL Creating Task...")
-    status, res = request("POST", f"/tasks/?owner_id={emp_id}", {
+    # NOTE: owner_id is now in the BODY, not query param
+    status, res = request("POST", "/tasks/", {
         "title": "Test Task",
         "description": "This is a test task",
         "priority": "high",
-        "status": "pending"
+        "status": "pending",
+        "owner_id": emp_id
     }, token=tl_token)
     print(f"Status: {status}, Response: {res}")
     if status != 201: print("FAILED"); return
-    task_id = res["id"]
+    task_id = res.get("id") or res.get("_id")
+    if not task_id: print("FAILED: No task ID in response"); return
 
     # 6. Employee Try Create Task (Should Fail)
     print(f"\n6. Employee Try Create Task (Expect 403)...")
@@ -102,7 +113,8 @@ def run_tests():
         "title": "Emp Task",
         "description": "Should fail",
         "priority": "low",
-        "status": "pending"
+        "status": "pending",
+        "owner_id": emp_id
     }, token=emp_token)
     print(f"Status: {status}")
     if status != 403: print(f"FAILED (Expected 403, got {status})"); return
@@ -123,12 +135,13 @@ def run_tests():
     print(f"\n9. Employee Create Change Request...")
     status, res = request("POST", "/requests/", {
         "field_name": "department",
-        "new_value": "Marketing",
-        "reason": "Transfer"
+        "new_value": "Marketing"
+        # reason removed as it's not in the model
     }, token=emp_token)
     print(f"Status: {status}, Response: {res}")
     if status != 201: print("FAILED"); return
-    req_id = res["id"]
+    req_id = res.get("id") or res.get("_id")
+    if not req_id: print("FAILED: No request ID in response"); return
 
     # 10. Employee Get Own Requests
     print(f"\n10. Employee Get Own Requests...")
@@ -142,8 +155,21 @@ def run_tests():
     print(f"Status: {status}, Count: {len(res)}")
     if status != 200: print("FAILED"); return
 
-    # 12. TL Update Task
-    print(f"\n12. TL Update Task...")
+    # 12. TL Approve Request
+    print(f"\n12. TL Approve Request...")
+    status, res = request("PUT", f"/requests/{req_id}/approve", token=tl_token)
+    print(f"Status: {status}, Response: {res}")
+    if status != 200: print("FAILED"); return
+
+    # 13. Verify Employee Profile Updated
+    print(f"\n13. Verify Employee Profile Updated...")
+    status, res = request("GET", f"/employees/{emp_id}", token=tl_token)
+    print(f"Status: {status}, Department: {res.get('department')}")
+    if status != 200: print("FAILED"); return
+    if res.get("department") != "Marketing": print("FAILED: Department not updated"); return
+
+    # 14. TL Update Task
+    print(f"\n14. TL Update Task...")
     status, res = request("PUT", f"/tasks/{task_id}", {
         "title": "Updated Task Title",
         "description": "Updated description",

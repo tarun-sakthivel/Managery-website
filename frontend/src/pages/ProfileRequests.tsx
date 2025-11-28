@@ -43,11 +43,11 @@
 //   const [requests, setRequests] = useState<ChangeRequest[]>(mockRequests);
 //   const [fieldName, setFieldName] = useState<string>('name');
 //   const [newValue, setNewValue] = useState('');
-  
+
 
 //   const handleSubmit = async (e: React.FormEvent) => {
 //     e.preventDefault();
-    
+
 //     const newRequest: ChangeRequest = {
 //       id: String(requests.length + 1),
 //       field_name: fieldName,
@@ -302,6 +302,40 @@ export default function ProfileRequests() {
     }
   };
 
+  const [profileData, setProfileData] = useState<any>(null);
+
+  // Fetch profile data on mount to ensure we have latest name/department
+  // This handles cases where JWT might be missing fields (e.g. hosted backend)
+  useEffect(() => {
+    if (!user || !token) return;
+
+    let mounted = true;
+    (async () => {
+      try {
+        // First try to use user data from context if complete
+        if (user.name && user.department) {
+          setProfileData(user);
+        }
+
+        // Always fetch fresh data to be sure (and to get updates after approval)
+        const data = await apiFetch(`/employees/${user.id}`, "GET", undefined, token);
+        if (mounted && data) {
+          setProfileData(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile:", err);
+        // Fallback to context user if API fails
+        if (mounted && !profileData) {
+          setProfileData(user);
+        }
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, [user, token]);
+
+  const displayUser = profileData || user;
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <h1 className="text-3xl font-bold text-foreground mb-8">My Profile & Change Requests</h1>
@@ -316,19 +350,19 @@ export default function ProfileRequests() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Name</p>
-              <p className="text-foreground">{user?.name}</p>
+              <p className="text-foreground">{displayUser?.name || "Loading..."}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Email</p>
-              <p className="text-foreground">{user?.email}</p>
+              <p className="text-foreground">{displayUser?.email}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Department</p>
-              <p className="text-foreground">{user?.department}</p>
+              <p className="text-foreground">{displayUser?.department || "-"}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Role</p>
-              <p className="text-foreground capitalize">{user?.role.replace("_", " ")}</p>
+              <p className="text-foreground capitalize">{displayUser?.role?.replace("_", " ")}</p>
             </div>
           </div>
         </CardContent>
