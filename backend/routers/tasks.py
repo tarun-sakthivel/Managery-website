@@ -249,7 +249,7 @@
     
 #     return
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Dict
 from models import TaskCreate, TaskRead, TaskUpdate
 from database import task_collection_dependency, user_collection_dependency
@@ -273,7 +273,8 @@ def serialize_doc(doc):
 
 
 @router.post("/", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
-async def create_task(task: TaskCreate, owner_id: str,
+async def create_task(task: TaskCreate, 
+                      owner_id: str = Query(..., description="ID of the employee to assign this task to"),
                       tasks_collection: AsyncIOMotorCollection = TaskCollection,
                       employees_collection: AsyncIOMotorCollection = EmployeeCollection,
                       user_data: dict = TL):
