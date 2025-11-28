@@ -543,7 +543,19 @@ class TaskInDB(TaskBase):
 
     model_config = MongoModelConfig
 
+class TaskRead(BaseModel):
+    id: str = Field(alias="_id")
+    title: str
+    description: str
+    priority: Priority
+    status: TaskStatus
+    owner_id: str
+    owner_name: Optional[str]
+    created_at: datetime
+    updated_at: Optional[datetime]
 
+    model_config = MongoModelConfig
+    
 # Change Request Models
 class ChangeRequestInDB(BaseModel):
     id: AnnotatedPyObjectId = Field(default_factory=PyObjectId, alias="_id")
