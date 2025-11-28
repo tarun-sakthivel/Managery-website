@@ -246,10 +246,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!accessToken || typeof accessToken !== "string") {
           throw new Error("Authentication failed: no token returned.");
         }
+
+        // Immediately parse the token and set user
+        const payload = parseJwt(accessToken);
+        if (payload && payload.id) {
+          setUser({
+            id: payload.id,
+            email: payload.email,
+            name: payload.name,
+            department: payload.department,
+            role: payload.role,
+          } as User);
+        }
+
         setTokenAndStore(accessToken);
       } catch (err: any) {
         setError(err?.message || String(err));
         setTokenAndStore(null);
+        setUser(null);
         throw err;
       } finally {
         setIsLoading(false);

@@ -241,7 +241,13 @@ async def get_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], 
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
     access_token = create_access_token(
-        data={"id": str(user.id), "email": user.email, "role": user.role}
+        data={
+            "id": str(user.id), 
+            "email": user.email, 
+            "name": user.name,
+            "department": user.department,
+            "role": user.role
+        }
     )
     return {"access_token": access_token, "token_type": "bearer"}
 

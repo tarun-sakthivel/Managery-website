@@ -20,7 +20,7 @@
 //   const [employee, setEmployee] = useState<Employee | null>(null);
 //   const [loading, setLoading] = useState(true);
 //   const [error, setError] = useState<string | null>(null);
-  
+
 //   useEffect(() => {
 //     async function fetchProfile() {
 //       try {
@@ -31,11 +31,11 @@
 //             'Content-Type': 'application/json',
 //           },
 //         });
-        
+
 //         if (!response.ok) {
 //           throw new Error(`HTTP ${response.status}`);
 //         }
-        
+
 //         const data = await response.json();
 //         setEmployee(data);
 //       } catch (err) {
@@ -131,11 +131,16 @@ export function Profile() {
 
   useEffect(() => {
     const employeeId = paramId || user?.id;
+
+    // Always fetch from API to get the latest data
+    // This ensures that approved change requests are reflected immediately
+    // without needing to re-login to get a new JWT token
     if (!token || !employeeId) {
       setLoading(false);
       setError("No user specified or not authenticated.");
       return;
     }
+
     let mounted = true;
     (async () => {
       try {
@@ -144,8 +149,21 @@ export function Profile() {
         if (!mounted) return;
         setEmployee(data);
       } catch (err: any) {
-        setError(err?.message || String(err));
-        toast({ title: "Failed to load profile", description: err?.message || String(err) });
+        if (!mounted) return;
+        // If API fails, fall back to user from context as last resort
+        if (!paramId && user) {
+          setEmployee({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            department: user.department,
+            role: user.role,
+          });
+          setError(null);
+        } else {
+          setError(err?.message || String(err));
+          toast({ title: "Failed to load profile", description: err?.message || String(err) });
+        }
       } finally {
         if (mounted) setLoading(false);
       }
