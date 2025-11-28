@@ -315,18 +315,40 @@ export default function TasksDashboard() {
     }
 
     try {
+      // if (selectedTask) {
+      //   // UPDATE task
+      //   const id = selectedTask.id;
+      //   const payload = { ...taskData };
+
+      //   await apiFetch(`/tasks/${id}`, "PUT", payload, token);
+
+      //   setTasks((prev) =>
+      //     prev.map((t) => (t.id === id ? { ...t, ...payload } as Task : t))
+      //   );
+
+      //   toast({ title: "Task updated" });
       if (selectedTask) {
         // UPDATE task
         const id = selectedTask.id;
-        const payload = { ...taskData };
+
+        // Send only allowed fields
+        const payload: any = {};
+        if (taskData.status) payload.status = taskData.status;
+        if (isTeamLeader) {
+          if (taskData.title) payload.title = taskData.title;
+          if (taskData.description) payload.description = taskData.description;
+          if (taskData.priority) payload.priority = taskData.priority;
+        }
 
         await apiFetch(`/tasks/${id}`, "PUT", payload, token);
 
-        setTasks((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, ...payload } as Task : t))
+        setTasks(prev =>
+          prev.map(t => (t.id === id ? { ...t, ...payload } as Task : t))
         );
 
         toast({ title: "Task updated" });
+
+
       } else {
         // CREATE task
         if (!ownerId) {
